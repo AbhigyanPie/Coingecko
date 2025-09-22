@@ -1,103 +1,194 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import Image from 'next/image';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { CoinTable } from '@/components/tables/CoinTable';
+import { CoinGeckoAPI } from '@/lib/api/coingecko';
+import { useStore } from '@/store/useStore';
+import { formatLargeNumber, formatPercentage, getChangeColorClass } from '@/lib/utils/format';
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, Activity, Users } from 'lucide-react';
+
+export default function DashboardPage() {
+  const { currency } = useStore();
+
+  // Fetch global market data
+  const { data: globalData, isLoading: globalLoading } = useQuery({
+    queryKey: ['global-market'],
+    queryFn: CoinGeckoAPI.getGlobalData,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fetch trending coins
+  const { data: trendingCoins = [], isLoading: trendingLoading } = useQuery({
+    queryKey: ['trending-coins'],
+    queryFn: CoinGeckoAPI.getTrendingCoins,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const marketStats = [
+    {
+      title: 'Total Market Cap',
+      value: globalData ? formatLargeNumber(globalData.total_market_cap[currency] || 0) : '--',
+      change: globalData?.market_cap_change_percentage_24h_usd || 0,
+      icon: DollarSign,
+      description: 'Total cryptocurrency market capitalization',
+    },
+    {
+      title: 'Total Volume (24h)',
+      value: globalData ? formatLargeNumber(globalData.total_volume[currency] || 0) : '--',
+      change: 0,
+      icon: BarChart3,
+      description: 'Total trading volume in the last 24 hours',
+    },
+    {
+      title: 'Active Cryptocurrencies',
+      value: globalData ? globalData.active_cryptocurrencies.toLocaleString() : '--',
+      change: 0,
+      icon: Activity,
+      description: 'Number of active cryptocurrencies',
+    },
+    {
+      title: 'Active Markets',
+      value: globalData ? globalData.markets.toLocaleString() : '--',
+      change: 0,
+      icon: Users,
+      description: 'Number of active trading markets',
+    },
+  ];
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="space-y-8 pb-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold">Cryptocurrency Dashboard</h1>
+        <p className="text-muted-foreground mt-2">
+          Track cryptocurrency prices, market data, and global market statistics
+        </p>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      {/* Market Overview Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {marketStats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {globalLoading ? (
+                    <div className="h-8 w-24 bg-muted animate-pulse rounded-md" />
+                  ) : (
+                    stat.value
+                  )}
+                </div>
+                {stat.change !== 0 && (
+                  <div className={`flex items-center text-xs ${getChangeColorClass(stat.change)}`}>
+                    {stat.change > 0 ? (
+                      <TrendingUp className="mr-1 h-3 w-3" />
+                    ) : (
+                      <TrendingDown className="mr-1 h-3 w-3" />
+                    )}
+                    {formatPercentage(stat.change)} from yesterday
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stat.description}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Market Dominance */}
+      {globalData && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Market Dominance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {Object.entries(globalData.market_cap_percentage)
+                .slice(0, 4)
+                .map(([symbol, percentage]) => (
+                  <div key={symbol} className="flex items-center justify-between">
+                    <span className="text-sm font-medium uppercase">{symbol}</span>
+                    <Badge variant="secondary">
+                      {percentage.toFixed(1)}%
+                    </Badge>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Trending Coins */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <TrendingUp className="h-5 w-5" />
+            <span>Trending Coins</span>
+            <Badge variant="secondary">Hot</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {trendingLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 rounded-lg border bg-card">
+                  <div className="h-3 w-4 bg-muted animate-pulse rounded" />
+                  <div className="h-8 w-8 bg-muted animate-pulse rounded-full" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                    <div className="h-3 w-12 bg-muted animate-pulse rounded" />
+                  </div>
+                  <div className="h-5 w-8 bg-muted animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {trendingCoins.slice(0, 6).map((coin: { item: { id: string; name: string; symbol: string; thumb: string; market_cap_rank: number } }, index: number) => (
+                <div
+                  key={coin.item.id}
+                  className="flex items-center space-x-3 p-3 rounded-lg border bg-card hover:bg-muted/50 hover:shadow-sm hover:border-muted-foreground/20 transition-all duration-200 cursor-pointer"
+                >
+                  <div className="flex-shrink-0">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      #{index + 1}
+                    </span>
+                  </div>
+                  <Image
+                    src={coin.item.thumb}
+                    alt={coin.item.name}
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{coin.item.name}</p>
+                    <p className="text-xs text-muted-foreground uppercase">
+                      {coin.item.symbol}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    #{coin.item.market_cap_rank}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Main Coin Table */}
+      <CoinTable />
     </div>
   );
 }
